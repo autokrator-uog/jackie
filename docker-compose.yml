@@ -1,0 +1,9 @@
+version: '3'
+
+services:
+  jackie:
+    build: .
+    environment:
+      PORT: 6767
+    ports:
+      - 6767:6767

@@ -60,6 +60,6 @@ fn main() {
     });
     
     server.listen(
-        format!("127.0.0.1:{}", matches.value_of("port").expect("No port specified and error in clap config!")))
+        format!("0.0.0.0:{}", matches.value_of("port").expect("No port specified and error in clap config!")))
         .expect("Unable to start server!");
 }
