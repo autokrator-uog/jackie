@@ -4,14 +4,25 @@
 extern crate fern;
 extern crate chrono;
 extern crate colored;
+extern crate couchbase;
+extern crate futures;
+extern crate serde;
+#[macro_use] extern crate serde_derive;
+extern crate serde_json;
+extern crate rustc_serialize;
 
 mod logging;
+mod db;
+mod queries;
+
+use std::collections::HashMap;
 
 use clap::{Arg, App};
-use logging::configure_logging;
 use log::LogLevelFilter;
 use nickel::{Nickel, HttpRouter, StaticFilesHandler};
-use std::collections::HashMap;
+
+use db::{BUCKET_NAME, connect_to_bucket};
+use logging::configure_logging;
 
 #[allow(resolve_trait_on_defaulted_unit)]
 #[allow(unreachable_code)]
@@ -44,17 +55,28 @@ fn main() {
     let level = value_t!(matches, "log-level", LogLevelFilter).unwrap_or(LogLevelFilter::Trace);
     configure_logging(level);
     
-    let mut server = Nickel::new();
+    // init couchbase connection to bucket
+    let couchbase_host = matches.value_of("couchbase_host").expect("Error in clap.");
     
-    // serve static assets
+    let bucket = match connect_to_bucket(couchbase_host, BUCKET_NAME) {
+        Ok(b) => b,
+        Err(_) => {
+            panic!("Couldn't connect to couchbase bucket... exiting now.")
+        }
+    };
+    
+    // init HTTP server
+    let mut server = Nickel::new();
     server.utilize(StaticFilesHandler::new("src/static/"));
 
     // index page
     server.get("/", middleware! { |_, res|
         trace!("Rendering index.html...");
         
-        let mut data = HashMap::new();
-        data.insert("service_name", "Jackie");
+        let mut data: HashMap<&str, std::vec::Vec<queries::AggregationResult>> = HashMap::new();
+        
+        let aggs = queries::make_aggregations_of_event_types(&bucket).expect("Aggregations failed!");
+        data.insert("aggs", aggs);
         
         return res.render("src/templates/index.html", &data)
     });

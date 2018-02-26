@@ -1,9 +1,26 @@
 <!DOCTYPE html>
 <html>
   <head>
-      <title>{{ service_name }}</title>
+      <title>Jackie</title>
+      <link href="style.css" rel="stylesheet" />
   </head>
   <body>
-    <p>{{ service_name }}</p>
+    <h1>Jackie - the reporting service</h1>
+    
+    <h2>Event Totals</h2>
+    <table>
+      <thead>
+        <td>Event Type</td>
+        <td>Count</td>
+      </thead>
+      <tbody>
+        {{#aggs}}
+          <tr>
+            <td>{{event_type}}</td>
+            <td>{{event_count}}</td>
+          </tr>
+        {{/aggs}}
+      </tbody>
+    </table>
   </body>
 </html>
