@@ -6,9 +6,9 @@ pub const BUCKET_NAME: &str = "events";
 const MAX_RETRIES: u8 = 60;
 const RETRY_INTERVAL_MILLIS: u64 = 1000;
 
-pub fn connect_to_bucket(couchbase_host: &str, bucket_name: &str) -> Result<Bucket, ()> {
+pub fn connect_to_bucket(couchbase_host: &String, bucket_name: &str) -> Result<Bucket, ()> {
     // This is simply a state object, it doesn't actually initiate connections.
-    let mut cluster = Cluster::new(couchbase_host).expect("Cannot create couchbase cluster object!");
+    let mut cluster = Cluster::new(&couchbase_host[..]).expect("Cannot create couchbase cluster object!");
     cluster.authenticate("connect", "connect");
     let cluster = cluster;
 

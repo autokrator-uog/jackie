@@ -7,34 +7,32 @@
   <body>
     <h1><a href="/">Jackie - the reporting service</a></h1>
     
-    <h2>Home</h2>
-    
-    <h3><a href="/totals">Event Totals</a></h3>
-    <h3>The last 20 events...</h3>
+    <h2>Events in same correlation_id</h2>
     
     <table>
       <thead>
+        <td>correlation_id</td>
         <td>Event Type</td>
         <td>Timestamp</td>
         <td>consistency_key</td>
         <td>consistency_value</td>
-        <td>correlation_id</td>
         <td>sender</td>
         <td>session_id</td>
       </thead>
       <tbody>
         {{#events}}
           <tr>
+            <td><a href="/correlation_id/{{ correlation_id }}/events">{{ correlation_id }}</a></td>
             <td>{{ event_type }}</td>
             <td>{{ timestamp }}</td>
             <td><a href="/consistency_key/{{ consistency.key }}/events">{{ consistency.key }}</a></td>
             <td>{{ consistency.value }}</td>
-            <td><a href="/correlation_id/{{ correlation_id }}/events">{{ correlation_id }}</a></td>
             <td>{{ sender }}</td>
             <td>{{ session_id }}</td>
           </tr>
         {{/events}}
       </tbody>
     </table>
+    
   </body>
 </html>

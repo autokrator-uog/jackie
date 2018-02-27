@@ -56,14 +56,13 @@ fn main() {
     configure_logging(level);
     
     // init couchbase connection to bucket
-    let couchbase_host = matches.value_of("couchbase_host").expect("Error in clap.");
+    let couchbase_host = matches.value_of("couchbase_host").expect("Error in clap.").to_string();
+    let cbh1 = couchbase_host.clone();
+    let cbh2 = couchbase_host.clone();
+    let cbh3 = couchbase_host.clone();
+    let cbh4 = couchbase_host.clone();
+    // I know this is ugly... I don't care, I'm beyond caring with Rust now.
     
-    let bucket = match connect_to_bucket(couchbase_host, BUCKET_NAME) {
-        Ok(b) => b,
-        Err(_) => {
-            panic!("Couldn't connect to couchbase bucket... exiting now.")
-        }
-    };
     
     // init HTTP server
     let mut server = Nickel::new();
@@ -71,14 +70,74 @@ fn main() {
 
     // index page
     server.get("/", middleware! { |_, res|
-        trace!("Rendering index.html...");
+        let bucket = match connect_to_bucket(&cbh1, BUCKET_NAME) {
+            Ok(b) => b,
+            Err(_) => {
+                panic!("Couldn't connect to couchbase bucket... exiting now.")
+            }
+        };
         
-        let mut data: HashMap<&str, std::vec::Vec<queries::AggregationResult>> = HashMap::new();
+        let mut data: HashMap<&str, Vec<queries::Event>> = HashMap::new();
+        
+        let events = queries::get_last_n_events(&bucket, 20).expect("Last 20 events failed!");
+        data.insert("events", events);
+        
+        trace!("Rendering index.html...");
+        return res.render("src/templates/index.html", &data)
+    });
+    
+    server.get("/totals", middleware! { |_, res|
+        let bucket = match connect_to_bucket(&cbh2, BUCKET_NAME) {
+            Ok(b) => b,
+            Err(_) => {
+                panic!("Couldn't connect to couchbase bucket... exiting now.")
+            }
+        };
+        
+        let mut data: HashMap<&str, Vec<queries::AggregationResult>> = HashMap::new();
         
         let aggs = queries::make_aggregations_of_event_types(&bucket).expect("Aggregations failed!");
         data.insert("aggs", aggs);
         
-        return res.render("src/templates/index.html", &data)
+        trace!("Rendering index.html...");
+        return res.render("src/templates/totals.html", &data)
+    });
+    
+    
+    server.get("/consistency_key/:ckey/events", middleware! { |req, res|
+        let consistency_key = req.param("ckey").unwrap();
+        
+        let bucket = match connect_to_bucket(&cbh3, BUCKET_NAME) {
+            Ok(b) => b,
+            Err(_) => {
+                panic!("Couldn't connect to couchbase bucket... exiting now.")
+            }
+        };
+        
+        let mut data: HashMap<&str, Vec<queries::Event>> = HashMap::new();
+        
+        let events = queries::get_events_for_consistency_key(&bucket, consistency_key).expect("Failed to get events for consistency_key");
+        data.insert("events", events);
+        
+        return res.render("src/templates/consistency_key_view.html", &data)
+    });
+    
+    server.get("/correlation_id/:cid/events", middleware! { |req, res| 
+        let correlation_id = req.param("cid").unwrap();
+        
+        let bucket = match connect_to_bucket(&cbh4, BUCKET_NAME) {
+            Ok(b) => b,
+            Err(_) => {
+                panic!("Couldn't connect to couchbase bucket... exiting now.")
+            }
+        };
+        
+        let mut data: HashMap<&str, Vec<queries::Event>> = HashMap::new();
+        
+        let events = queries::get_events_for_correlation_id(&bucket, correlation_id).expect("Failed to get events for consistency_key");
+        data.insert("events", events);
+        
+        return res.render("src/templates/correlation_id_view.html", &data)
     });
     
     server.listen(

@@ -2,6 +2,10 @@ table, thead, td {
     border: 1px solid black;
 }
 
+td {
+  padding: 3px;
+}
+
 thead {
   font-weight: bold;
 }
